@@ -9,7 +9,7 @@ include(target_add_versioninfo)
 include(generate_ipp_translation_units)
 include(configure_msvc_wine_intellisense)
 
-project(UnionPlugin
+project(zDualWielding
 	DESCRIPTION "Union plugin for Gothic Games"
 	VERSION ${PROJECT_VERSION}
 )
@@ -19,7 +19,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # By default template uses dynamically linked union-api target to avoid compatibility problems.
 # If you want to produce a standalone plugin, set this option to OFF
-set(GENERATE_UNION_API_DLL ON)
+set(GENERATE_UNION_API_DLL OFF)
 
 # By default template generates .vdf with the .dll and files form \vdf\_Work and \vdf\System
 # If you want to produce only the .dll, set this option to OFF

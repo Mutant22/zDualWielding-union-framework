@@ -1,7 +1,7 @@
 include(get_targeted_gothic_engines)
 
 function(generate_ipp_translation_units)
-    cmake_parse_arguments(ARG "" "INPUT;OUTPUT" "" ${ARGN})
+    cmake_parse_arguments(ARG "" "OUTPUT" "INPUT" ${ARGN})
 
 	if (NOT DEFINED ARG_INPUT)
 		message(SEND_ERROR "generate_ipp_translation_units function requires INPUT argument")

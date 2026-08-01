@@ -1,7 +1,7 @@
 include(get_targeted_gothic_engines)
 
 function(configure_msvc_wine_intellisense)
-    cmake_parse_arguments(ARG "" "TARGET;INPUT" "" ${ARGN})
+    cmake_parse_arguments(ARG "" "TARGET" "INPUT" ${ARGN})
 
     if (NOT DEFINED ARG_TARGET)
         message(SEND_ERROR "configure_msvc_wine_intellisense function requires TARGET argument")

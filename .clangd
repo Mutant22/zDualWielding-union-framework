@@ -2,3 +2,28 @@ CompileFlags:
   CompilationDatabase: .
   Add:
     - --target=i686-pc-windows-msvc
+    - -isystem
+    - $HOME/.local/opt/msvc-wine/Windows Kits/10/Include/10.0.26100.0/um
+    - -isystem
+    - $HOME/.local/opt/msvc-wine/Windows Kits/10/Include/10.0.26100.0/shared
+    - -isystem
+    - $HOME/.local/opt/msvc-wine/Windows Kits/10/Include/10.0.26100.0/ucrt
+    - -isystem
+    - $HOME/.local/opt/msvc-wine/Windows Kits/10/Include/10.0.26100.0/winrt
+
+---
+If:
+  PathMatch: .*\.ipp$
+CompileFlags:
+  Add:
+    - -x
+    - c++
+    - -DUNION_MULTIPLATFORM
+    - -D__G1
+    - -D__G1A
+    - -D__G2
+    - -D__G2A
+    - -DENGINE=ENGINE_G2A
+    - -DGOTHIC_NAMESPACE=Gothic_II_Addon
+    - -include
+    - out/build/G2A-Release-msvc-wine/intellisense/IntelliSenseContext.h

@@ -1,4 +1,43 @@
-# Introduction
+# zDualWielding
+
+
+## Description
+
+<b>zDualWielding</b> is an Union plugin for Gothic game, that allows
+the Player to equip two one-handed weapons at once as well as use them
+in combat.
+
+## Features
+
+* Works with any one-handed weapon
+* Works on any NPC
+* Damage is calculated based on attack direction:
+  * Right - damage from weapon in right hand
+  * Left - damage from weapon in left hand
+  * Front - sum of damages from both weapons
+* When both weapons are equipped, player can still equip and use 
+a ranged weapon
+
+## Dependencies
+
+* [Union](https://github.com/Gratt-5r2/UnionProject)
+* zModelProtoExtender (included in VDF)
+  * It is better to combine it with zModelProtoExtender, because of applying/removing overlay on load, normally it causes character reset
+* Some animations for dual fighting (HUMANS_2X2ST3.MDS) 
+  * Animations from New Balance, edited for 1h fight are included
+
+## Usage
+
+Use as any other Union plugin.
+
+## Notes
+
+* Based upon new union plugin template from Patrix9999 [here](https://github.com/Patrix9999/union-plugin-template)
+* Direct port with some improvements of zDualWielding by Diegothic [here](https://github.com/Diegothic/zDualWielding)
+
+## Template readme
+
+### Introduction
 
 This project serves as a starting point for creating a union plugin for the following Gothic games:
 - [Gothic I](https://gothic.fandom.com/wiki/Gothic_1)
@@ -8,7 +47,7 @@ This project serves as a starting point for creating a union plugin for the foll
 
 It provides a preconfigured base code designed to simplify the development process and help you focus on building new features for your plugin.
 
-# Requirements
+### Requirements
 
 Before you start making your own plugin, you need to install some software first, here's a full list of things that you'll need to install to be able to build the union plugin:
 - [git](https://git-scm.com/) **Required** for version control and to clone the project repository
@@ -26,7 +65,7 @@ Linux builds additionally require:
 The Union plugin still uses the real MSVC toolset on Linux through msvc-wine.
 Alternative toolchains such as MinGW are not used.
 
-# Fetching the source code
+### Fetching the source code
 
 1. Make sure to clone the your project repository recursively (to fetch all of the [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules)).  
 2. You can achieve this by typing this command in your terminal: 
@@ -34,7 +73,7 @@ Alternative toolchains such as MinGW are not used.
 git clone --recursive URL_TO_YOUR_REPO
 ```
 
-# Configuration
+### Configuration
 
 The plugin template contains special file called `CMakeUserConfigPresets.json`  
 in which you can manully specify the variables for your own needs.  
@@ -69,32 +108,32 @@ Some of the common things that you should propably change are:
 - **project version**  
 	default value is **1.0.0.0**
 
-# Building on Windows
+### Building on Windows
 
 Follow the steps below to compile the plugin:
 
-## Step 1: Open the Project in Visual Studio
+#### Step 1: Open the Project in Visual Studio
 
 1. Navigate to the root directory of your repository.
 2. Right-click on the folder's content (without selecting any files or subfolders).
 3. Select **Open with Visual Studio** from the context menu.
 
-## Step 2: Choose a Configuration
+#### Step 2: Choose a Configuration
 
 1. In Visual Studio, locate the Solution Configurations dropdown menu in the top toolbar.
 2. Select the desired configuration for your build
 
-## Step 3: Pick the Startup Project
+#### Step 3: Pick the Startup Project
 
 1. In Visual Studio, locate the Solution Startup Item dropdown menu in the top toolbar.
 2. Select your plugin from dropdown list
 
-### Step 4: Build the plugin
+#### Step 4: Build the plugin
 
 1. Once everything is configured, click **Build Solution** (or press **Ctrl+Shift+B**).
 2. If you've configured everything correctly, the build process should complete successfully.
 
-# Building on Linux
+### Building on Linux
 
 After installing msvc-wine and setting `MSVC_WINE_ROOT`, configure and build
 the preset matching the desired game and build type:
@@ -119,7 +158,7 @@ Use MP only when the plugin supports all four engines. The Linux build creates
 a 32-bit Windows DLL and packages the VDF in `out/build/PRESET_NAME/vdf/`.
 `GothicVDFS.exe` runs through Wine automatically on Linux.
 
-## VS Code IntelliSense on Linux
+#### VS Code IntelliSense on Linux
 
 The repository includes configurations for Microsoft C/C++ and clangd.
 Configuring a Linux preset generates `compile_commands.json` and selects that
@@ -139,7 +178,7 @@ Code. Open `src/Plugin.ipp` and run **C/C++: Log Diagnostics** to verify that
 the active translation unit contains the MSVC, Windows SDK, Gothic API, and
 Union API include paths.
 
-# Plugin installation
+### Plugin installation
 
 Once the plugin has been compiled successfully, you can tell the game to load it during startup by placing it in `Game/System/autorun` subdirectory.  
 
@@ -155,7 +194,7 @@ On Windows you can use [Link Shell Extension](https://schinagl.priv.at/nt/hardli
 Alternatively you can just copy `UnionPlugin.vdf` into `Game/Data` directory.  
 This will work, because `UnionPlugin.vdf` already constains `UnionAPI.dll` inside of it.
 
-# Publishing plugin
+### Publishing plugin
 
 This project provides [github action](https://github.com/features/actions) for compiling and releasing a new version of your plugin via github.  
 

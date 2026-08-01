@@ -1,5 +1,7 @@
 // This file is included separately for each engine version
 
+#include "DualWielding.h"
+
 namespace GOTHIC_NAMESPACE
 {
 	// NOTE! Callbacks won't be called by default, you need to uncomment
@@ -57,7 +59,23 @@ namespace GOTHIC_NAMESPACE
 
 	void LoadEnd()
 	{
+		zCArray<zCVob*> ActiveVobList = ogame->GetWorld()->activeVobList;
+		for (int i = 0; i < ActiveVobList.GetNum(); i++) {
+			zCVob* Vob = ActiveVobList.GetSafe(i);
+			oCNpc* Npc = Vob->CastTo<oCNpc>();
+			if (Npc) {
+				zCModel* NpcModel = Npc->GetModel();
+				zCModelNodeInst* LongswordNode = NpcModel->SearchNode(NPC_NODE_LONGSWORD);
+				zCModelNodeInst* LeftHandNode = NpcModel->SearchNode(NPC_NODE_LEFTHAND);
 
+				if (!LongswordNode || !LeftHandNode) {
+					continue;
+				}
+
+				DualWielding DualWielder(Npc);
+				DualWielder.LoadWeaponState();
+			}
+		}
 	}
 
 	void Game_LoadBegin_NewGame()
@@ -176,41 +194,41 @@ namespace GOTHIC_NAMESPACE
 		Game_SaveEnd();
 	}*/
 
-	/*void __fastcall oCGame_LoadGame(oCGame* self, void* vtable, int slot, const zSTRING& levelPath);
+	void __fastcall oCGame_LoadGame(oCGame* self, void* vtable, int slot, const zSTRING& levelPath);
 	auto Hook_oCGame_LoadGame = Union::CreateHook(SIGNATURE_OF(&oCGame::LoadGame), &oCGame_LoadGame, Union::HookType::Hook_Detours);
 	void __fastcall oCGame_LoadGame(oCGame* self, void* vtable, int slot, const zSTRING& levelPath)
 	{
 		Game_LoadBegin_NewGame();
 		Hook_oCGame_LoadGame(self, vtable, slot, levelPath);
 		Game_LoadEnd_NewGame();
-	}*/
+	}
 
-	/*void __fastcall oCGame_LoadSaveGame(oCGame* self, void* vtable, int slot, zBOOL loadGlobals);
+	void __fastcall oCGame_LoadSaveGame(oCGame* self, void* vtable, int slot, zBOOL loadGlobals);
 	auto Hook_oCGame_LoadSaveGame = Union::CreateHook(SIGNATURE_OF(&oCGame::LoadSavegame), &oCGame_LoadSaveGame, Union::HookType::Hook_Detours);
 	void __fastcall oCGame_LoadSaveGame(oCGame* self, void* vtable, int slot, zBOOL loadGlobals)
 	{
 		Game_LoadBegin_SaveGame();
 		Hook_oCGame_LoadSaveGame(self, vtable, slot, loadGlobals);
 		Game_LoadEnd_SaveGame();
-	}*/
+	}
 
-	/*void __fastcall oCGame_ChangeLevel(oCGame* self, void* vtable, const zSTRING& levelpath, const zSTRING& startpoint);
+	void __fastcall oCGame_ChangeLevel(oCGame* self, void* vtable, const zSTRING& levelpath, const zSTRING& startpoint);
 	auto Hook_oCGame_ChangeLevel = Union::CreateHook(SIGNATURE_OF(&oCGame::ChangeLevel), &oCGame_ChangeLevel, Union::HookType::Hook_Detours);
 	void __fastcall oCGame_ChangeLevel(oCGame* self, void* vtable, const zSTRING& levelpath, const zSTRING& startpoint)
 	{
 		Game_LoadBegin_ChangeLevel();
 		Hook_oCGame_ChangeLevel(self, vtable, levelpath, startpoint);
 		Game_LoadEnd_ChangeLevel();
-	}*/
+	}
 
-	/*void __fastcall oCGame_TriggerChangeLevel(oCGame* self, void* vtable, const zSTRING& levelpath, const zSTRING& startpoint);
+	void __fastcall oCGame_TriggerChangeLevel(oCGame* self, void* vtable, const zSTRING& levelpath, const zSTRING& startpoint);
 	auto Hook_oCGame_TriggerChangeLevel = Union::CreateHook(SIGNATURE_OF(&oCGame::TriggerChangeLevel), &oCGame_TriggerChangeLevel, Union::HookType::Hook_Detours);
 	void __fastcall oCGame_TriggerChangeLevel(oCGame* self, void* vtable, const zSTRING& levelpath, const zSTRING& startpoint)
 	{
 		Game_LoadBegin_TriggerChangeLevel();
 		Hook_oCGame_TriggerChangeLevel(self, vtable, levelpath, startpoint);
 		Game_LoadEnd_TriggerChangeLevel();
-	}*/
+	}
 
 /*#if ENGINE <= Engine_G1A
 	void __fastcall oCGame_Pause(oCGame* self, void* vtable);

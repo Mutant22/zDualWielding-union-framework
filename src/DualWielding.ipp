@@ -107,8 +107,6 @@ namespace GOTHIC_NAMESPACE {
 
 		zCModel*         NpcModel      = Npc->GetModel();
 		zCModelNodeInst* SwordNode     = NpcModel->SearchNode(NPC_NODE_SWORD);
-		//new
-		zCModelNodeInst* LeftHandNode  = NpcModel->SearchNode(NPC_NODE_LEFTHAND);
 		zCModelNodeInst* LongswordNode = NpcModel->SearchNode(NPC_NODE_LONGSWORD);
 		zCModelNodeInst* LeftSwordNode = NpcModel->SearchNode(NPC_NODE_LEFTSWORD);
 
@@ -124,11 +122,7 @@ namespace GOTHIC_NAMESPACE {
 			NpcModel->SetNodeVisual(LongswordNode, RightSwordEquipped->visual, 0);
 			NpcModel->SetNodeVisual(LeftSwordNode, LeftSwordEquipped->visual, 0);
 		} else {
-			NpcModel->SetNodeVisual(SwordNode, nullptr, 0);
-			//new
-			NpcModel->SetNodeVisual(LeftHandNode, LeftSwordEquipped->visual, 0);
-			zMAT4 Trafo = NpcModel->GetTrafoNodeToModel(LeftHandNode);
-			LeftSwordEquipped->SetTrafo(Trafo);
+			DrawSwords();
 		}
 
 		ApplyDualAnimations();

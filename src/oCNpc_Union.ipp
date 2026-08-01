@@ -5,11 +5,13 @@ namespace GOTHIC_NAMESPACE {
 	oCItem* __fastcall Hooked_oCNpc_GetWeapon(oCNpc* self, void* vtable);
 	void __fastcall Hooked_oCNpc_EquipWeapon(oCNpc* self, void* vtable, oCItem* weaponToEquip);
 	void __fastcall Hooked_oCNpc_SetWeaponMode2_novt(oCNpc* self, void* vtable, zSTRING const& newWeaponMode);
+	void __fastcall Hooked_oCNpc_DoDie(oCNpc* self, void* vtable, oCNpc* killer);
 	void __fastcall Hooked_oCNpc_DropUnconscious(oCNpc* self, void* vtable, float hitAngle, oCNpc* instigator);
 
 	static auto Hook_oCNpc_GetWeapon_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::GetWeapon), &Hooked_oCNpc_GetWeapon, Union::HookType::Hook_Detours);
 	static auto Hook_oCNpc_EquipWeapon_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::EquipWeapon), &Hooked_oCNpc_EquipWeapon, Union::HookType::Hook_Detours);
 	static auto Hook_oCNpc_SetWeaponMode2_novt_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::SetWeaponMode2_novt), &Hooked_oCNpc_SetWeaponMode2_novt, Union::HookType::Hook_Detours);
+	static auto Hook_oCNpc_DoDie_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::DoDie), &Hooked_oCNpc_DoDie, Union::HookType::Hook_Detours);
 	static auto Hook_oCNpc_DropUnconscious_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::DropUnconscious), &Hooked_oCNpc_DropUnconscious, Union::HookType::Hook_Detours);
 
 	// oCItem* GetWeapon() zCall( 0x007377A0 );
@@ -83,6 +85,30 @@ namespace GOTHIC_NAMESPACE {
 		Hook_oCNpc_SetWeaponMode2_novt_Union(self, vtable, NewWeaponMode);
 
 		DualWielder.ChangeWeaponMode(NewWeaponMode, FromFightMode);
+	}
+
+	// void DoDie( oCNpc* ) zCall( 0x00736760 );
+	void __fastcall Hooked_oCNpc_DoDie(oCNpc* self, void* vtable, oCNpc* Killer)
+	{
+		DualWielding DualWielder(self);
+
+		bool    WasInFightMode = self->fmode != 0;
+		oCItem* LeftSword      = nullptr;
+		if (WasInFightMode) {
+			oCItem* LeftSwordInHand = DualWielder.GetLeftSwordInHand();
+			if (LeftSwordInHand && DualWielding::IsWeaponForDualWielding(LeftSwordInHand)) {
+				LeftSword = LeftSwordInHand;
+				LeftSword->AddRef();
+			}
+		}
+
+		Hook_oCNpc_DoDie_Union(self, vtable, Killer);
+
+		if (!LeftSword) {
+			return;
+		}
+
+		DualWielder.DropWeapons(true, nullptr, LeftSword);
 	}
 
 	// void DropUnconscious(float, oCNpc*) zCall(0x00735EB0);

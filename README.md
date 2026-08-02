@@ -10,13 +10,13 @@ in combat.
 ## Features
 
 * Works with any one-handed weapon
+* Must be master of weapons >=60 to equip second weapon
 * Works on any NPC
-* Damage is calculated based on attack direction:
-  * Right - damage from weapon in right hand
-  * Left - damage from weapon in left hand
-  * Front - sum of damages from both weapons
-* When both weapons are equipped, player can still equip and use 
-a ranged weapon
+* Damage is calculated based on DEF_HIT_LIMB of specific attack animation:
+  * ZS_RIGHTHAND - damage from weapon in right hand
+  * ZS_LEFTHAND - damage from weapon in left hand
+  * Both - 60 % of each weapon combined, if weapon does not have corresponding type of damage, stronger damage is used in full
+* When both weapons are equipped, player can still equip and use a ranged weapon
 
 ## Dependencies
 

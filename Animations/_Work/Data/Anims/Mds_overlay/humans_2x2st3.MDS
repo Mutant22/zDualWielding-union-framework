@@ -141,7 +141,7 @@ Model ("humans_2x2st3")
 		// 1h attack
 		ani		("S_1HATTACK"	1	"S_1HATTACK"	0	0.2	M.	"humans_2x2st3_S_2HATTACK.ASC"	F	0	94)
 		{
-			*eventTag	(0 "DEF_HIT_LIMB" "ZS_RIGHTHAND")
+			*eventTag	(0 "DEF_HIT_LIMB" "ZS_RIGHTHAND" "ZS_LEFTHAND")
 			*eventTag	(0 "DEF_OPT_FRAME" "7 28 53 80")
 			*eventTag	(0 "DEF_HIT_END" "24 49 74 94")
 			*eventTag	(0 "DEF_WINDOW" "9 24 33 49 58 74")
@@ -150,6 +150,7 @@ Model ("humans_2x2st3")
 			*eventSFX	(51 "WHOOSH" EMPTY_SLOT)
 			*eventSFX	(78 "WHOOSH" EMPTY_SLOT)
 		}
+		// these animations looks like attacking from different hand, left attacks with right hand and swings left
 		ani		("T_1HATTACKL"	1	""	0	0.2	M.	"humans_2x2st3_T_2HATTACKL.ASC"	F	0	24)
 		{
 			*eventTag	(0 "DEF_HIT_LIMB" "ZS_RIGHTHAND")
@@ -158,9 +159,10 @@ Model ("humans_2x2st3")
 			*eventTag	(0 "DEF_WINDOW" "10 24")
 			*eventSFX	(2 "WHOOSH" EMPTY_SLOT)
 		}
+		// these animations looks like attacking from different hand, right attacks with left hand and swings right
 		ani		("T_1HATTACKR"	1	""	0	0.2	M.	"humans_2x2st3_T_2HATTACKR.ASC"	F	0	24)
 		{
-			*eventTag	(0 "DEF_HIT_LIMB" "ZS_RIGHTHAND")
+			*eventTag	(0 "DEF_HIT_LIMB" "ZS_LEFTHAND")
 			*eventTag	(0 "DEF_OPT_FRAME" "4")
 			*eventTag	(0 "DEF_HIT_END" "24")
 			*eventTag	(0 "DEF_WINDOW" "10 24")

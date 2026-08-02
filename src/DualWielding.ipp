@@ -21,16 +21,21 @@ namespace GOTHIC_NAMESPACE {
 	}
 
 	const char* DualWielding::NPC_MDS_DUALWIELDING = "HUMANS_2X2ST3.MDS";
-	const char* DualWielding::NPC_NODE_LEFTSWORD = "ZS_LEFTSWORD";
-	const char* DualWielding::NPC_NODE_LEFTHANDSWORD = "ZS_LEFTHANDSWORD";
+	const char* DualWielding::NPC_NODE_LEFTSWORD = "ZS_LEFTSWORD"; //< node on back for second sword
+	const char* DualWielding::NPC_NODE_LEFTHANDSWORD = "ZS_LEFTHANDSWORD"; //< node in hand for second sword, also does damage, if specified in MDS animations
 
-	oCItem* DualWielding::CombinedSword = nullptr;
+	oCItem* DualWielding::CombinedSword = nullptr; //< fake virtual sword, that combines damage when both nodes hit target
 
 	DualWielding::DualWielding(oCNpc* Npc) : Npc(Npc)
 	{
 		if (!HasLeftWeaponSlots()) {
 			CreateLeftWeaponSlots();
 		}
+	}
+
+	bool DualWielding::CanDualWield() const
+	{
+		return Npc->GetHitChance(NPC_HITCHANCE_1H) >= 60;
 	}
 
 	bool DualWielding::HasLeftWeaponSlots() const
@@ -275,7 +280,13 @@ namespace GOTHIC_NAMESPACE {
 			CombinedSword->damageTotal += LeftSwordEquipped->damageTotal;
 			CombinedSword->flags &= LeftSwordEquipped->flags;
 			for (int i = 0; i < oEDamageIndex_MAX; i++) {
-				CombinedSword->damage[i] += LeftSwordEquipped->damage[i];
+				// Use 60% of damage of each weapon - TODO: make configurable
+				// When one weapon does not have any damage of that type, use full damage of stronger weapon
+				if (CombinedSword->damage[i] == 0 || LeftSwordEquipped->damage[i] == 0) {
+					CombinedSword->damage[i] = (CombinedSword->damage[i] > LeftSwordEquipped->damage[i]) ? CombinedSword->damage[i] : LeftSwordEquipped->damage[i];
+					continue;
+				}
+				CombinedSword->damage[i] = static_cast<int>((CombinedSword->damage[i] * 0.60) + (LeftSwordEquipped->damage[i] * 0.60));
 			}
 
 			return CombinedSword;
@@ -298,16 +309,17 @@ namespace GOTHIC_NAMESPACE {
 		zCModelNodeInst* SwordNode         = NpcModel->SearchNode(NPC_NODE_SWORD);
 		zCModelNodeInst* LongswordNode     = NpcModel->SearchNode(NPC_NODE_LONGSWORD);
 		zCModelNodeInst* LeftHandNode      = NpcModel->SearchNode(NPC_NODE_LEFTHAND);
+		zCModelNodeInst* RightHandNode     = NpcModel->SearchNode(NPC_NODE_RIGHTHAND);
 		zCModelNodeInst* LeftSwordNode     = NpcModel->SearchNode(NPC_NODE_LEFTSWORD);
 		zCModelNodeInst* LeftHandSwordNode = NpcModel->SearchNode(NPC_NODE_LEFTHANDSWORD);
 
+		UnequipRightWeapon();
+		UnequipLeftWeapon();
+
+		NpcModel->SetNodeVisual(LeftHandSwordNode, nullptr, 0);
+		NpcModel->SetNodeVisual(LeftHandNode, nullptr, 0);
+
 		if (WasInFightMode) {
-			UnequipRightWeapon();
-			UnequipLeftWeapon();
-
-			NpcModel->SetNodeVisual(LeftHandSwordNode, nullptr, 0);
-			NpcModel->SetNodeVisual(LeftHandNode, nullptr, 0);
-
 			if (LeftSword) {
 				ogame->GetGameWorld()->AddVob(LeftSword);
 				ogame->GetGameWorld()->EnableVob(LeftSword, nullptr);
@@ -315,19 +327,21 @@ namespace GOTHIC_NAMESPACE {
 				LeftSword->SetPositionWorld(Npc->GetPositionWorld() + Trafo.GetTranslation());
 				LeftSword->physicsEnabled = true;
 				LeftSword->SetSleeping(false);
-				LeftSword->Release();
+			}
+			if (RightSword) {
+				ogame->GetGameWorld()->AddVob(RightSword);
+				ogame->GetGameWorld()->EnableVob(RightSword, nullptr);
+				zMAT4 Trafo = NpcModel->GetTrafoNodeToModel(RightHandNode);
+				RightSword->SetPositionWorld(Npc->GetPositionWorld() + Trafo.GetTranslation());
+				RightSword->physicsEnabled = true;
+				RightSword->SetSleeping(false);
 			}
 		}
-		else {
-			UnequipRightWeapon();
-			UnequipLeftWeapon();
 
-			Npc->EquipItem(RightSword);
-			Npc->PutInSlot(NPC_NODE_SWORD, RightSword, 1);
-			EquipDualWeapons(RightSword, LeftSword);
-			ApplyDualAnimations();
-
+		if (LeftSword) {
 			LeftSword->Release();
+		}
+		if (RightSword) {
 			RightSword->Release();
 		}
 	}

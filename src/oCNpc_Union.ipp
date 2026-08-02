@@ -14,6 +14,57 @@ namespace GOTHIC_NAMESPACE {
 	static auto Hook_oCNpc_DoDie_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::DoDie), &Hooked_oCNpc_DoDie, Union::HookType::Hook_Detours);
 	static auto Hook_oCNpc_DropUnconscious_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::DropUnconscious), &Hooked_oCNpc_DropUnconscious, Union::HookType::Hook_Detours);
 
+	template<typename Callback>
+	static void UnconsciousOrDieHandler(oCNpc* self, Callback&& callback)
+	{
+		DualWielding DualWielder(self);
+
+		bool    WasInFightMode  = self->fmode == NPC_WEAPON_1HS; //< when dual wielding character uses e.g. bow, we want to clear npc wapons from back
+		bool    WasDualWielding = false;
+		oCItem* LeftSword       = nullptr;
+		oCItem* RightSword      = nullptr;
+		if (WasInFightMode) {
+			LeftSword = DualWielder.GetLeftSwordInHand();
+			RightSword = self->GetSlotItem(NPC_NODE_RIGHTHAND);
+
+			if (LeftSword) {
+				Union::StringANSI::Format("zDualWielding: LeftSword: {0}\n", LeftSword->name.ToChar()).StdPrintLine();
+			}
+			if (RightSword) {
+				Union::StringANSI::Format("zDualWielding: RightSword: {0}\n", RightSword->name.ToChar()).StdPrintLine();
+			}
+
+			if (LeftSword && RightSword && DualWielder.IsWeaponForDualWielding(LeftSword) && DualWielder.IsWeaponForDualWielding(RightSword)) {
+				WasDualWielding = true;
+				// references are cleared in DropWeapons
+				LeftSword->AddRef();
+				RightSword->AddRef();
+			}
+		} else {
+			LeftSword  = DualWielder.GetEquippedLeftSword();
+			RightSword = self->GetSlotItem(NPC_NODE_SWORD);
+
+			if (LeftSword && RightSword && DualWielder.IsWeaponForDualWielding(LeftSword) && DualWielder.IsWeaponForDualWielding(RightSword)) {
+				WasDualWielding = true;
+				// references are cleared in DropWeapons
+				LeftSword->AddRef();
+				RightSword->AddRef();
+			}
+		}
+
+		if (WasDualWielding) {
+			// sometimes one of the weapons stayed "equipped", equip them explicitely before callback
+			DualWielder.UnequipRightWeapon();
+			DualWielder.UnequipLeftWeapon();
+		}
+
+		callback();
+
+		if (WasDualWielding) {
+			DualWielder.DropWeapons(WasInFightMode, RightSword, LeftSword);
+		}
+	}
+
 	// oCItem* GetWeapon() zCall( 0x007377A0 );
 	oCItem* __fastcall Hooked_oCNpc_GetWeapon(oCNpc* self, void* vtable)
 	{
@@ -41,6 +92,11 @@ namespace GOTHIC_NAMESPACE {
 	{
 		DualWielding DualWielder(self);
 		DualWielder.RemoveDualAnimations();
+
+		if (!DualWielder.CanDualWield()) {
+			Hook_oCNpc_EquipWeapon_Union(self, vtable, WeaponToEquip);
+			return;
+		}
 		
 		oCItem* LeftSwordEquipped  = DualWielder.GetEquippedLeftSword();
 		oCItem* RightSwordEquipped = self->GetSlotItem(NPC_NODE_SWORD);
@@ -90,60 +146,16 @@ namespace GOTHIC_NAMESPACE {
 	// void DoDie( oCNpc* ) zCall( 0x00736760 );
 	void __fastcall Hooked_oCNpc_DoDie(oCNpc* self, void* vtable, oCNpc* Killer)
 	{
-		DualWielding DualWielder(self);
-
-		bool    WasInFightMode = self->fmode != 0;
-		oCItem* LeftSword      = nullptr;
-		if (WasInFightMode) {
-			oCItem* LeftSwordInHand = DualWielder.GetLeftSwordInHand();
-			if (LeftSwordInHand && DualWielding::IsWeaponForDualWielding(LeftSwordInHand)) {
-				LeftSword = LeftSwordInHand;
-				LeftSword->AddRef();
-			}
-		}
-
-		Hook_oCNpc_DoDie_Union(self, vtable, Killer);
-
-		if (!LeftSword) {
-			return;
-		}
-
-		DualWielder.DropWeapons(true, nullptr, LeftSword);
+		UnconsciousOrDieHandler(self, [&]() {
+			Hook_oCNpc_DoDie_Union(self, vtable, Killer);
+		});
 	}
 
 	// void DropUnconscious(float, oCNpc*) zCall(0x00735EB0);
 	void __fastcall Hooked_oCNpc_DropUnconscious(oCNpc* self, void* vtable, float HitAngle, oCNpc* Instigator)
 	{
-		DualWielding DualWielder(self);
-
-		bool    WasInFightMode  = self->fmode != 0;
-		bool    WasDualWielding = false;
-		oCItem* LeftSword       = nullptr;
-		oCItem* RightSword      = nullptr;
-		if (WasInFightMode) {
-			oCItem* LeftSwordInHand = DualWielder.GetLeftSwordInHand();
-			if (LeftSwordInHand && DualWielding::IsWeaponForDualWielding(LeftSwordInHand)) {
-				WasDualWielding = true;
-				LeftSword = LeftSwordInHand;
-				LeftSword->AddRef();
-			}
-		}
-		else {
-			LeftSword  = DualWielder.GetEquippedLeftSword();
-			RightSword = self->GetSlotItem(NPC_NODE_SWORD);
-			if (LeftSword && RightSword) {
-				WasDualWielding = true;
-				LeftSword->AddRef();
-				RightSword->AddRef();
-			}
-		}
-
-		Hook_oCNpc_DropUnconscious_Union(self, vtable, HitAngle, Instigator);
-
-		if (!WasDualWielding) {
-			return;
-		}
-
-		DualWielder.DropWeapons(WasInFightMode, RightSword, LeftSword);
+		UnconsciousOrDieHandler(self, [&]() {
+			Hook_oCNpc_DropUnconscious_Union(self, vtable, HitAngle, Instigator);
+		});
 	}
 }

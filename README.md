@@ -10,7 +10,9 @@ in combat.
 ## Features
 
 * Works with any one-handed weapon
-* Must be master of weapons >=60 to equip second weapon
+* Must be master of 1h weapons to equip second weapon
+  * Normally >=60 weapon usage in G2, 10% in G1
+  * Implementation uses talent_1h >=2
 * Works on any NPC
 * Damage is calculated based on DEF_HIT_LIMB of specific attack animation:
   * ZS_RIGHTHAND - damage from weapon in right hand
@@ -29,6 +31,11 @@ in combat.
 ## Usage
 
 Use as any other Union plugin.
+
+## Bugs
+
+* When messing with inventory, equiping/unequiping dual weapons, and then dropping one of the weapons -> weapon dissapears
+* Killing monster caused game to crash - Added check whether npc IsHuman.
 
 ## Notes
 

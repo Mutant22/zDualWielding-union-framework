@@ -17,6 +17,11 @@ namespace GOTHIC_NAMESPACE {
 	template<typename Callback>
 	static void UnconsciousOrDieHandler(oCNpc* self, Callback&& callback)
 	{
+		if (!self->IsHuman()) {
+			callback();
+			return;
+		}
+
 		DualWielding DualWielder(self);
 
 		bool    WasInFightMode  = self->fmode == NPC_WEAPON_1HS; //< when dual wielding character uses e.g. bow, we want to clear npc wapons from back
@@ -53,7 +58,7 @@ namespace GOTHIC_NAMESPACE {
 		}
 
 		if (WasDualWielding) {
-			// sometimes one of the weapons stayed "equipped", equip them explicitely before callback
+			// sometimes one of the weapons stayed "equipped", un-equip them explicitely before callback
 			DualWielder.UnequipRightWeapon();
 			DualWielder.UnequipLeftWeapon();
 		}

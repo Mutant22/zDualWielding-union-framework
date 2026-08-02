@@ -35,7 +35,8 @@ namespace GOTHIC_NAMESPACE {
 
 	bool DualWielding::CanDualWield() const
 	{
-		return Npc->GetHitChance(NPC_HITCHANCE_1H) >= 60;
+		// better compatibility with G1/G2, NPC must be master
+		return Npc->GetTalentSkill(oCNpcTalent::NPC_TAL_1H) >= 2;
 	}
 
 	bool DualWielding::HasLeftWeaponSlots() const

@@ -6,12 +6,45 @@ namespace GOTHIC_NAMESPACE {
 	// chain nested calls instead of using a single global scratch slot.
 	struct DropCaptureContext {
 		oCNpc* npc;
-		oCItem* requestedItem;
 		oCItem* removedItem;
 		DropCaptureContext* prev;
 	};
 
 	static thread_local DropCaptureContext* g_DropCaptureCtx = nullptr;
+
+	struct DropCaptureScope {
+		DropCaptureContext context;
+
+		DropCaptureScope(oCNpc* npc, oCItem* requestedItem) : context{ npc, nullptr, g_DropCaptureCtx }
+		{
+			(void)requestedItem;
+			g_DropCaptureCtx = &context;
+		}
+
+		~DropCaptureScope()
+		{
+			g_DropCaptureCtx = context.prev;
+		}
+
+		oCItem* GetRemovedItem() const
+		{
+			return context.removedItem;
+		}
+	};
+
+	static inline void RestoreRightWeaponState(oCNpc* self, oCItem* rightSword)
+	{
+		if (!self || !rightSword) {
+			return;
+		}
+
+		if (!rightSword->HasFlag(ITM_FLAG_ACTIVE)) {
+			self->EquipItem(rightSword);
+		}
+		if (!self->GetSlotItem(NPC_NODE_SWORD)) {
+			self->PutInSlot(NPC_NODE_SWORD, rightSword, 1);
+		}
+	}
 
 	oCItem* __fastcall Hooked_oCNpc_GetWeapon(oCNpc* self, void* vtable);
 	void __fastcall Hooked_oCNpc_EquipWeapon(oCNpc* self, void* vtable, oCItem* weaponToEquip);
@@ -118,28 +151,14 @@ namespace GOTHIC_NAMESPACE {
 		if (LeftSwordEquipped && RightSwordEquipped) {
 			if (WeaponToEquip == LeftSwordEquipped) {
 				DualWielder.UnequipLeftWeapon();
-
-				// Do not call EquipWeapon on an already equipped right weapon, because
-				// vanilla EquipWeapon toggles equipped items off.
-				if (RightSwordEquipped && !RightSwordEquipped->HasFlag(ITM_FLAG_ACTIVE)) {
-					self->EquipItem(RightSwordEquipped);
-				}
-				if (RightSwordEquipped && !self->GetSlotItem(NPC_NODE_SWORD)) {
-					self->PutInSlot(NPC_NODE_SWORD, RightSwordEquipped, 1);
-				}
+				RestoreRightWeaponState(self, RightSwordEquipped);
 
 				return;
 			}
 
 			if (WeaponToEquip == RightSwordEquipped) {
 				DualWielder.UnequipLeftWeapon();
-
-				if (RightSwordEquipped && !RightSwordEquipped->HasFlag(ITM_FLAG_ACTIVE)) {
-					self->EquipItem(RightSwordEquipped);
-				}
-				if (RightSwordEquipped && !self->GetSlotItem(NPC_NODE_SWORD)) {
-					self->PutInSlot(NPC_NODE_SWORD, RightSwordEquipped, 1);
-				}
+				RestoreRightWeaponState(self, RightSwordEquipped);
 
 				return;
 			}
@@ -208,13 +227,10 @@ namespace GOTHIC_NAMESPACE {
 		oCItem* inInvBefore = (self && droppedItem) ? self->inventory2.IsIn(droppedItem, 1) : nullptr;
 		bool isPlayer = self && ogame && self == ogame->GetSelfPlayerVob();
 
-		// Push a temporary context for this exact drop call.
-		DropCaptureContext ctx = { self, droppedItem, nullptr, g_DropCaptureCtx };
-		g_DropCaptureCtx = &ctx;
+		DropCaptureScope dropScope(self, droppedItem);
 
 		int result = Hook_oCNpc_DoDropVob_Union(self, vtable, VobToDrop);
-		oCItem* removedDuringDrop = ctx.removedItem;
-		g_DropCaptureCtx = ctx.prev;
+		oCItem* removedDuringDrop = dropScope.GetRemovedItem();
 		oCItem* inInvAfter = (self && droppedItem) ? self->inventory2.IsIn(droppedItem, 1) : nullptr;
 
 		// Recovery for rare invalid state: engine reports success, but exact dropped pointer

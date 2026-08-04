@@ -156,22 +156,54 @@ namespace GOTHIC_NAMESPACE {
 		zCModel*         NpcModel          = Npc->GetModel();
 		zCModelNodeInst* LeftSwordNode     = NpcModel->SearchNode(NPC_NODE_LEFTSWORD);
 		zCModelNodeInst* LongswordNode     = NpcModel->SearchNode(NPC_NODE_LONGSWORD);
-		oCItem*          LeftSwordEquipped = Npc->GetSlotItem(NPC_NODE_LEFTSWORD);
+		oCItem*          LeftSwordBack      = Npc->GetSlotItem(NPC_NODE_LEFTSWORD);
+		oCItem*          LeftSwordInHand    = Npc->GetSlotItem(NPC_NODE_LEFTHAND);
 
-		RemoveFromSlotCompat(Npc, NPC_NODE_LEFTSWORD);
-		Npc->UnequipItem(LeftSwordEquipped);
+		// Clear the back-slot item first, then the hand copy if it is a different pointer.
+		// This keeps the engine from reusing the wrong instance while the dual-wield state is unwound.
+		if (LeftSwordBack) {
+			Npc->UnequipItem(LeftSwordBack);
+		}
+		if (LeftSwordInHand && LeftSwordInHand != LeftSwordBack) {
+			Npc->UnequipItem(LeftSwordInHand);
+		}
+
+		if (Npc->GetSlotItem(NPC_NODE_LEFTSWORD)) {
+			RemoveFromSlotCompat(Npc, NPC_NODE_LEFTSWORD);
+		}
+		if (Npc->GetSlotItem(NPC_NODE_LEFTHAND)) {
+			RemoveFromSlotCompat(Npc, NPC_NODE_LEFTHAND);
+		}
+
 		Npc->GetModel()->SetNodeVisual(LeftSwordNode, nullptr, 0);
 		Npc->GetModel()->SetNodeVisual(LongswordNode, nullptr, 0);
 	}
 
-	void DualWielding::UnequipRightWeapon() const
+	void DualWielding::UnequipRightWeapon(oCItem* RightSwordHint) const
 	{
 		zCModel*         NpcModel           = Npc->GetModel();
 		zCModelNodeInst* LongswordNode      = NpcModel->SearchNode(NPC_NODE_LONGSWORD);
-		oCItem*          RightSwordEquipped = Npc->GetSlotItem(NPC_NODE_SWORD);
+		oCItem*          RightSwordSheath   = RightSwordHint ? RightSwordHint : Npc->GetSlotItem(NPC_NODE_SWORD);
+		oCItem*          RightSwordInHand   = Npc->GetSlotItem(NPC_NODE_RIGHTHAND);
 
-		RemoveFromSlotCompat(Npc, NPC_NODE_SWORD);
-		Npc->UnequipItem(RightSwordEquipped);
+		// Prefer the caller-provided pointer when we already know the exact item.
+		// If the right-hand slot also holds a different pointer, clear that too.
+		if (RightSwordSheath) {
+			Npc->UnequipItem(RightSwordSheath);
+		}
+		if (RightSwordInHand && RightSwordInHand != RightSwordSheath) {
+			Npc->UnequipItem(RightSwordInHand);
+		}
+
+		if (Npc->GetSlotItem(NPC_NODE_SWORD)) {
+			RemoveFromSlotCompat(Npc, NPC_NODE_SWORD);
+		}
+		if (Npc->GetInvSlot(NPC_NODE_RIGHTHAND)) {
+			if (Npc->GetSlotItem(NPC_NODE_RIGHTHAND)) {
+				RemoveFromSlotCompat(Npc, NPC_NODE_RIGHTHAND);
+			}
+		}
+
 		Npc->GetModel()->SetNodeVisual(LongswordNode, nullptr, 0);
 	}
 
@@ -314,8 +346,8 @@ namespace GOTHIC_NAMESPACE {
 		zCModelNodeInst* LeftSwordNode     = NpcModel->SearchNode(NPC_NODE_LEFTSWORD);
 		zCModelNodeInst* LeftHandSwordNode = NpcModel->SearchNode(NPC_NODE_LEFTHANDSWORD);
 
-		UnequipRightWeapon();
 		UnequipLeftWeapon();
+		UnequipRightWeapon();
 
 		NpcModel->SetNodeVisual(LeftHandSwordNode, nullptr, 0);
 		NpcModel->SetNodeVisual(LeftHandNode, nullptr, 0);

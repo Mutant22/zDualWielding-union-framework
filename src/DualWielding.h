@@ -25,7 +25,7 @@ namespace GOTHIC_NAMESPACE {
 
 		void EquipDualWeapons(oCItem* RightHandWeapon, oCItem* LeftHandWeapon) const;
 		void UnequipLeftWeapon() const;
-		void UnequipRightWeapon() const;
+		void UnequipRightWeapon(oCItem* RightSwordHint = nullptr) const;
 		oCItem* GetEquippedLeftSword() const;
 		oCItem* GetLeftSwordInHand() const;
 

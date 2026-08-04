@@ -310,7 +310,6 @@ namespace GOTHIC_NAMESPACE {
 
 			CombinedSword = RightSwordEquipped->CreateCopy()->CastTo<oCItem>();
 			CombinedSword->AddRef();
-			CombinedSword->damageTotal += LeftSwordEquipped->damageTotal;
 			CombinedSword->flags &= LeftSwordEquipped->flags;
 			for (int i = 0; i < oEDamageIndex_MAX; i++) {
 				// Use 60% of damage of each weapon - TODO: make configurable
@@ -320,6 +319,10 @@ namespace GOTHIC_NAMESPACE {
 					continue;
 				}
 				CombinedSword->damage[i] = static_cast<int>((CombinedSword->damage[i] * 0.60) + (LeftSwordEquipped->damage[i] * 0.60));
+			}
+			CombinedSword->damageTotal = 0;
+			for (int i = 0; i < oEDamageIndex_MAX; i++) {
+				CombinedSword->damageTotal += CombinedSword->damage[i];
 			}
 
 			return CombinedSword;

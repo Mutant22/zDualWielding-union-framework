@@ -32,10 +32,6 @@ in combat.
 
 Use as any other Union plugin.
 
-## Bugs
-
-* When messing with inventory, equiping/unequiping dual weapons, and then dropping one of the weapons -> weapon dissapears
-* Killing monster caused game to crash - Added check whether npc IsHuman.
 
 ## Notes
 

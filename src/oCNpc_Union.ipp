@@ -2,36 +2,6 @@
 #include "DualWielding.h"
 
 namespace GOTHIC_NAMESPACE {
-	// DropVob/RemoveAmount can be re-entered, so keep the active drop state per thread and
-	// chain nested calls instead of using a single global scratch slot.
-	struct DropCaptureContext {
-		oCNpc* npc;
-		oCItem* removedItem;
-		DropCaptureContext* prev;
-	};
-
-	static thread_local DropCaptureContext* g_DropCaptureCtx = nullptr;
-
-	struct DropCaptureScope {
-		DropCaptureContext context;
-
-		DropCaptureScope(oCNpc* npc, oCItem* requestedItem) : context{ npc, nullptr, g_DropCaptureCtx }
-		{
-			(void)requestedItem;
-			g_DropCaptureCtx = &context;
-		}
-
-		~DropCaptureScope()
-		{
-			g_DropCaptureCtx = context.prev;
-		}
-
-		oCItem* GetRemovedItem() const
-		{
-			return context.removedItem;
-		}
-	};
-
 	static inline void RestoreRightWeaponState(oCNpc* self, oCItem* rightSword)
 	{
 		if (!self || !rightSword) {
@@ -51,16 +21,12 @@ namespace GOTHIC_NAMESPACE {
 	void __fastcall Hooked_oCNpc_SetWeaponMode2_novt(oCNpc* self, void* vtable, zSTRING const& newWeaponMode);
 	void __fastcall Hooked_oCNpc_DoDie(oCNpc* self, void* vtable, oCNpc* killer);
 	void __fastcall Hooked_oCNpc_DropUnconscious(oCNpc* self, void* vtable, float hitAngle, oCNpc* instigator);
-	int __fastcall Hooked_oCNpc_DoDropVob(oCNpc* self, void* vtable, zCVob* vobToDrop);
-	oCItem* __fastcall Hooked_oCNpcInventory_RemoveAmount(oCNpcInventory* self, void* vtable, oCItem* item, int amount);
 
 	static auto Hook_oCNpc_GetWeapon_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::GetWeapon), &Hooked_oCNpc_GetWeapon, Union::HookType::Hook_Detours);
 	static auto Hook_oCNpc_EquipWeapon_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::EquipWeapon), &Hooked_oCNpc_EquipWeapon, Union::HookType::Hook_Detours);
 	static auto Hook_oCNpc_SetWeaponMode2_novt_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::SetWeaponMode2_novt), &Hooked_oCNpc_SetWeaponMode2_novt, Union::HookType::Hook_Detours);
 	static auto Hook_oCNpc_DoDie_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::DoDie), &Hooked_oCNpc_DoDie, Union::HookType::Hook_Detours);
 	static auto Hook_oCNpc_DropUnconscious_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::DropUnconscious), &Hooked_oCNpc_DropUnconscious, Union::HookType::Hook_Detours);
-	static auto Hook_oCNpc_DoDropVob_Union = Union::CreateHook(SIGNATURE_OF(&oCNpc::DoDropVob), &Hooked_oCNpc_DoDropVob, Union::HookType::Hook_Detours);
-	static auto Hook_oCNpcInventory_RemoveAmount_Union = Union::CreateHook(SIGNATURE_OF(static_cast<oCItem* (oCNpcInventory::*)(oCItem*, int)>(&oCNpcInventory::Remove)), &Hooked_oCNpcInventory_RemoveAmount, Union::HookType::Hook_Detours);
 
 	template<typename Callback>
 	static void UnconsciousOrDieHandler(oCNpc* self, Callback&& callback)
@@ -220,57 +186,4 @@ namespace GOTHIC_NAMESPACE {
 		});
 	}
 
-	// int DoDropVob(zCVob*) zCall(0x00744DD0);
-	int __fastcall Hooked_oCNpc_DoDropVob(oCNpc* self, void* vtable, zCVob* VobToDrop)
-	{
-		oCItem* droppedItem = VobToDrop ? VobToDrop->CastTo<oCItem>() : nullptr;
-		oCItem* inInvBefore = (self && droppedItem) ? self->inventory2.IsIn(droppedItem, 1) : nullptr;
-		bool isPlayer = self && ogame && self == ogame->GetSelfPlayerVob();
-
-		DropCaptureScope dropScope(self, droppedItem);
-
-		int result = Hook_oCNpc_DoDropVob_Union(self, vtable, VobToDrop);
-		oCItem* removedDuringDrop = dropScope.GetRemovedItem();
-		oCItem* inInvAfter = (self && droppedItem) ? self->inventory2.IsIn(droppedItem, 1) : nullptr;
-
-		// Recovery for rare invalid state: engine reports success, but exact dropped pointer
-		// is still in inventory, which can produce ghost/unpickable world items.
-		if (isPlayer && droppedItem && result != 0 && inInvBefore && inInvAfter) {
-			int removeAmount = droppedItem->amount > 0 ? droppedItem->amount : 1;
-			if (removedDuringDrop && removedDuringDrop != droppedItem) {
-				// The engine removed a different instance than the one it tried to drop, so
-				// swap the inventory state back to keep one copy in inventory and one in world.
-				oCItem* removedRequested = self->inventory2.RemoveByPtr(droppedItem, removeAmount);
-				if (!removedRequested) {
-					removedRequested = self->inventory2.Remove(droppedItem, removeAmount);
-				}
-				(void)removedRequested;
-
-				if (!self->inventory2.IsIn(removedDuringDrop, 1)) {
-					self->inventory2.Insert(removedDuringDrop);
-				}
-			} else {
-				oCItem* forcedRemoved = self->inventory2.RemoveByPtr(droppedItem, removeAmount);
-				if (!forcedRemoved) {
-					forcedRemoved = self->inventory2.Remove(droppedItem, removeAmount);
-				}
-				(void)forcedRemoved;
-			}
-		}
-		return result;
-	}
-
-	oCItem* __fastcall Hooked_oCNpcInventory_RemoveAmount(oCNpcInventory* self, void* vtable, oCItem* Item, int Amount)
-	{
-		oCItem* removed = Hook_oCNpcInventory_RemoveAmount_Union(self, vtable, Item, Amount);
-		if (g_DropCaptureCtx && !g_DropCaptureCtx->removedItem) {
-			oCNpc* owner = self ? self->GetOwner() : nullptr;
-			// Only record the first removal that belongs to the active drop call.
-			if (!g_DropCaptureCtx->npc || owner == g_DropCaptureCtx->npc) {
-				g_DropCaptureCtx->removedItem = removed;
-			}
-		}
-
-		return removed;
-	}
 }

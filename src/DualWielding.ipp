@@ -20,6 +20,25 @@ namespace GOTHIC_NAMESPACE {
 	#endif
 	}
 
+	static inline void NormalizeInventoryItemInstance(oCNpc* npc, oCItem* item)
+	{
+		if (!npc || !item || !item->MultiSlot()) {
+			return;
+		}
+
+		oCItem* inInventory = npc->inventory2.IsIn(item, 1);
+		if (!inInventory) {
+			return;
+		}
+
+		int amountToNormalize = inInventory->amount > 0 ? inInventory->amount : 1;
+		oCItem* removed = npc->inventory2.Remove(inInventory, amountToNormalize);
+
+		if (removed) {
+			npc->inventory2.Insert(removed);
+		}
+	}
+
 	const char* DualWielding::NPC_MDS_DUALWIELDING = "HUMANS_2X2ST3.MDS";
 	const char* DualWielding::NPC_NODE_LEFTSWORD = "ZS_LEFTSWORD"; //< node on back for second sword
 	const char* DualWielding::NPC_NODE_LEFTHANDSWORD = "ZS_LEFTHANDSWORD"; //< node in hand for second sword, also does damage, if specified in MDS animations
@@ -168,6 +187,11 @@ namespace GOTHIC_NAMESPACE {
 			Npc->UnequipItem(LeftSwordInHand);
 		}
 
+		NormalizeInventoryItemInstance(Npc, LeftSwordBack);
+		if (LeftSwordInHand && LeftSwordInHand != LeftSwordBack) {
+			NormalizeInventoryItemInstance(Npc, LeftSwordInHand);
+		}
+
 		if (Npc->GetSlotItem(NPC_NODE_LEFTSWORD)) {
 			RemoveFromSlotCompat(Npc, NPC_NODE_LEFTSWORD);
 		}
@@ -193,6 +217,11 @@ namespace GOTHIC_NAMESPACE {
 		}
 		if (RightSwordInHand && RightSwordInHand != RightSwordSheath) {
 			Npc->UnequipItem(RightSwordInHand);
+		}
+
+		NormalizeInventoryItemInstance(Npc, RightSwordSheath);
+		if (RightSwordInHand && RightSwordInHand != RightSwordSheath) {
+			NormalizeInventoryItemInstance(Npc, RightSwordInHand);
 		}
 
 		if (Npc->GetSlotItem(NPC_NODE_SWORD)) {
@@ -394,6 +423,6 @@ namespace GOTHIC_NAMESPACE {
 
 	bool DualWielding::IsWeaponForDualWielding(oCItem* Weapon)
 	{
-		return Weapon->HasFlag(ITM_FLAG_SWD) || Weapon->HasFlag(ITM_FLAG_AXE);
+		return Weapon->HasFlag(ITM_FLAG_DAG) || Weapon->HasFlag(ITM_FLAG_SWD) || Weapon->HasFlag(ITM_FLAG_AXE);
 	}
 }

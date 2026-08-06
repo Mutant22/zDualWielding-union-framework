@@ -106,7 +106,7 @@ namespace GOTHIC_NAMESPACE {
 		DualWielding DualWielder(self);
 		DualWielder.RemoveDualAnimations();
 
-		if (!DualWielder.CanDualWield()) {
+		if (!DualWielder.CanDualWield() || self->ShieldEquipped()) {
 			Hook_oCNpc_EquipWeapon_Union(self, vtable, WeaponToEquip);
 			return;
 		}

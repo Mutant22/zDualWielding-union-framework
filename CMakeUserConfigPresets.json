@@ -12,7 +12,7 @@
       "name": "msvc-wine-config",
       "hidden": true,
       "cacheVariables": {
-        "MSVC_WINE_ROOT": "$env{HOME}/my_msvc/opt/msvc"
+        "MSVC_WINE_ROOT": "$env{MSVC_WINE_ROOT}/"
       }
     }
   ]

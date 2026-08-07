@@ -11,6 +11,10 @@ namespace GOTHIC_NAMESPACE {
 		DualWielding(oCNpc* Npc);
 		~DualWielding() {}
 
+		static bool IsShieldWeapon(oCItem* weapon);
+
+		bool HasShieldEquipped() const;
+
 		/**
 		 * As we only have one animation for dual wielding, NPC must be master to do so
 		 * Or some AIVAR could represent the knowledge of dual wielding

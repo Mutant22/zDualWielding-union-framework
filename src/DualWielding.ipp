@@ -52,6 +52,20 @@ namespace GOTHIC_NAMESPACE {
 		}
 	}
 
+	bool DualWielding::IsShieldWeapon(oCItem* weapon)
+	{
+		return weapon && weapon->HasFlag(ITM_FLAG_SHIELD);
+	}
+
+	bool DualWielding::HasShieldEquipped() const
+	{
+		if (!Npc) {
+			return false;
+		}
+
+		return IsShieldWeapon(Npc->GetSlotItem(NPC_NODE_SHIELD)) || IsShieldWeapon(Npc->GetSlotItem(NPC_NODE_LEFTARM));
+	}
+
 	bool DualWielding::CanDualWield() const
 	{
 		// better compatibility with G1/G2, NPC must be master
